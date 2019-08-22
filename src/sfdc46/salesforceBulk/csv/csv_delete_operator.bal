@@ -124,25 +124,38 @@ public type CsvDeleteOperator client object {
     # + return - Batch result as CSV if successful else SalesforceError occured
     public remote function getBatchResults(string batchId, int numberOfTries = 1, int waitTime = 3000) 
         returns @tainted string | SalesforceError {
-        int counter = 0;
-        while (counter < numberOfTries) {
-            Batch|SalesforceError batch = self->getBatchInfo(batchId);
+        // int counter = 0;
+        // while (counter < numberOfTries) {
+        //     Batch|SalesforceError batch = self->getBatchInfo(batchId);
             
-            if (batch is Batch) {
-                if (batch.state == COMPLETED) {
-                    return self.httpBaseClient->getCsvRecord([JOB, self.job.id, BATCH, batchId, RESULT]);
-                } else if (batch.state == FAILED) {
-                    return getFailedBatchError(batch);
-                } else {
-                    printWaitingMessage(batch);
-                }
-            } else {
-                return batch;
-            }
+        //     if (batch is Batch) {
+        //         if (batch.state == COMPLETED) {
+        //             return self.httpBaseClient->getCsvRecord([JOB, self.job.id, BATCH, batchId, RESULT]);
+        //         } else if (batch.state == FAILED) {
+        //             return getFailedBatchError(batch);
+        //         } else {
+        //             printWaitingMessage(batch);
+        //         }
+        //     } else {
+        //         return batch;
+        //     }
 
-            runtime:sleep(waitTime); // Sleep 3s.
-            counter = counter + 1;
-        }
-        return getResultTimeoutError(batchId, numberOfTries, waitTime);
+        //     runtime:sleep(waitTime); // Sleep 3s.
+        //     counter = counter + 1;
+        // }
+        // return getResultTimeoutError(batchId, numberOfTries, waitTime);
+
+        return getResults(getBatchPointer, getRecordPointer, self, self.job.id, batchId, numberOfTries, waitTime);
     }
 };
+
+function getBatchPointer(@tainted CsvDeleteOperator|CsvInsertOperator op, string batchId) 
+    returns @tainted Batch|SalesforceError {
+    return op->getBatchInfo(batchId);
+}
+
+function getRecordPointer(@tainted CsvDeleteOperator|CsvInsertOperator op, string jobId, string batchId) 
+    returns @tainted string|SalesforceError {
+    SalesforceBaseClient httpBaseClient = op.httpBaseClient;
+    return httpBaseClient->getCsvRecord([JOB, jobId, BATCH, batchId, RESULT]);
+}

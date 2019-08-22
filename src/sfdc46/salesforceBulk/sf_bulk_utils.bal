@@ -348,3 +348,29 @@ function getResultTimeoutError(string batchId, int numberOfTries, int waitTime) 
 function printWaitingMessage(Batch batch) {
     log:printInfo("Waiting to complete the batch, batch=" + batch.toString());
 }
+
+function getResults(function(CsvDeleteOperator|CsvInsertOperator, string) returns (Batch|SalesforceError) getBatchPointer,
+    function(CsvDeleteOperator|CsvInsertOperator, string, string) returns (string|SalesforceError) getRecordPointer,
+    CsvDeleteOperator|CsvInsertOperator op, string jobId, string batchId, int numberOfTries, int waitTime)
+    returns string|SalesforceError {
+    int counter = 0;
+    while (counter < numberOfTries) {
+        Batch|SalesforceError batch = getBatchPointer(op, batchId);
+        
+        if (batch is Batch) {
+            if (batch.state == COMPLETED) {
+                return getRecordPointer(op, jobId, batchId);
+            } else if (batch.state == FAILED) {
+                return getFailedBatchError(batch);
+            } else {
+                printWaitingMessage(batch);
+            }
+        } else {
+            return batch;
+        }
+
+        runtime:sleep(waitTime); // Sleep 3s.
+        counter = counter + 1;
+    }
+    return getResultTimeoutError(batchId, numberOfTries, waitTime);
+}
