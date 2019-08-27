@@ -75,7 +75,7 @@ function prepareQueryUrl(string[] paths, string[] queryParamNames, string[] quer
 # + expectPayload - true if json payload expected in response, if not false
 # + return - JSON result if successful, else SalesforceConnectorError occured
 function checkAndSetErrors(http:Response|error httpResponse, boolean expectPayload)
-returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
     json result = {};
 
     if (httpResponse is http:Response) {
@@ -86,49 +86,53 @@ returns @tainted json|SalesforceConnectorError {
                 if (jsonResponse is json) {
                     return jsonResponse;
                 } else {
-                    log:printError("Error occurred when extracting JSON payload. Error: "
-                    + <string> jsonResponse.detail()["message"]);
-                    SalesforceConnectorError connectorError = { message: "", salesforceErrors: [] };
-                    connectorError.message = "Error occured while extracting Json payload!";
-                    return connectorError;
+                    log:printError("Error occurred when extracting JSON payload. Error: " 
+                        + <string> jsonResponse.detail()["message"]);
+                    return getSalesforceError("Error occured while extracting Json payload", 
+                        http:STATUS_INTERNAL_SERVER_ERROR);
                 }
             }
         } else {
-            SalesforceConnectorError connectorError = { message: "", salesforceErrors: [] };
             var jsonResponse = httpResponse.getJsonPayload();
+
             if (jsonResponse is json) {
                 json[]|error errors = <json[]>jsonResponse;
 
                 if (errors is error) {
                     log:printError("Error occurred when extracting JSON payload. Error: "
-                    + <string> errors.detail()["message"]);
-                    connectorError = { message: "", salesforceErrors: [] };
-                    connectorError.message = "Error occured while extracting Json payload!";
-                    return connectorError;
+                        + <string> errors.detail()["message"]);
+                    return getSalesforceError("Error occured while extracting Json payload", 
+                        http:STATUS_INTERNAL_SERVER_ERROR);
                 } else {
-                    int i = 0;
+                    int counter = 1;
+                    string detailedError = "";
+                    string initialErrCode = errors[0].errorCode.toString();
+
                     foreach var err in errors {
-                        SalesforceError sfError = { message: err.message.toString(), errorCode:err.errorCode
-                        .toString() };
-                        connectorError.message = err.message.toString();
-                        connectorError.salesforceErrors[i] = sfError;
-                        i = i + 1;
+                        string errMsg = err.message.toString();
+                        string errCode = err.errorCode.toString();
+
+                        detailedError = detailedError + "[" + errCode + "] " + errMsg;
+
+                        if (errors.length() != counter) {
+                            detailedError = detailedError + ", ";
+                        } 
+                        counter = counter + 1;
                     }
-                    return connectorError;
+
+                    return getSalesforceError(detailedError, initialErrCode);
                 }
+
             } else {
                 log:printError("Error occurred when extracting errors from payload. Error: "
-                + <string> jsonResponse.detail()["message"]);
-                connectorError = { message: "", salesforceErrors: [] };
-                connectorError.message = "Error occured while extracting errors from payload!";
-                return connectorError;
+                    + <string> jsonResponse.detail()["message"]);
+                return getSalesforceError("Error occurred when extracting errors from payload.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         }
     } else {
-        SalesforceConnectorError connectorError = {
-                message: "Http error -> message: " + <string> httpResponse.detail()["message"], salesforceErrors: []
-        };
-        return connectorError;
+        return getSalesforceError("Http error -> message: " + <string> httpResponse.detail()["message"],
+            http:STATUS_INTERNAL_SERVER_ERROR);
     }
     return result;
 }

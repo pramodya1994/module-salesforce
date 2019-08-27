@@ -50,23 +50,33 @@ public type Client client object {
     }
 
     # Lists summary details about each REST API version available.
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getAvailableApiVersions() returns @tainted json|SalesforceConnectorError {
+    # + return - List of `Version` result if successful else SalesforceError occured
+    public remote function getAvailableApiVersions() returns @tainted Version[]|SalesforceError {
         string path = prepareUrl([BASE_PATH]);
-        return self->getRecord(path);
+        json|SalesforceError jsonRes = self->getRecord(path);
+        if (jsonRes is json) {
+            return getVersions(jsonRes);
+        } else {
+            return jsonRes;
+        }
     }
 
     # Lists the resources available for the specified API version.
     # + apiVersion - API version (v37)
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getResourcesByApiVersion(string apiVersion) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getResourcesByApiVersion(string apiVersion) returns @tainted map<string>|SalesforceError {
         string path = prepareUrl([BASE_PATH, apiVersion]);
-        return self->getRecord(path);
+        json|SalesforceError jsonRes = self->getRecord(path);
+        if (jsonRes is json) {
+            return getApiResources(jsonRes);
+        } else {
+            return jsonRes;
+        }
     }
 
     # Lists limits information for your organization.
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getOrganizationLimits() returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getOrganizationLimits() returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, LIMITS]);
         return self->getRecord(path);
     }
@@ -75,33 +85,33 @@ public type Client client object {
 
     # Executes the specified SOQL query.
     # + receivedQuery - Sent SOQL query
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getQueryResult(string receivedQuery) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getQueryResult(string receivedQuery) returns @tainted json|SalesforceError {
         string path = prepareQueryUrl([API_BASE_PATH, QUERY], [Q], [receivedQuery]);
         return self->getRecord(path);
     }
 
     # If the query results are too large, retrieve the next batch of results using nextRecordUrl.
     # + nextRecordsUrl - URL to get next query results
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getNextQueryResult(string nextRecordsUrl) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getNextQueryResult(string nextRecordsUrl) returns @tainted json|SalesforceError {
         return self->getRecord(nextRecordsUrl);
     }
 
     # Returns records that have been deleted because of a merge or delete, archived Task
     # and Event records.
     # + queryString - Sent SOQL query
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getAllQueries(string queryString) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getAllQueries(string queryString) returns @tainted json|SalesforceError {
         string path = prepareQueryUrl([API_BASE_PATH, QUERYALL], [Q], [queryString]);
         return self->getRecord(path);
     }
 
     # Get feedback on how Salesforce will execute the query, report, or list view based on performance.
     # + queryReportOrListview - Sent query
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function explainQueryOrReportOrListview(string queryReportOrListview)
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         string path = prepareQueryUrl([API_BASE_PATH, QUERY], [EXPLAIN], [queryReportOrListview]);
         return self->getRecord(path);
     }
@@ -110,8 +120,8 @@ public type Client client object {
 
     # Executes the specified SOSL search.
     # + searchString - Sent SOSL search query
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function searchSOSLString(string searchString) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function searchSOSLString(string searchString) returns @tainted json|SalesforceError {
         string path = prepareQueryUrl([API_BASE_PATH, SEARCH], [Q], [searchString]);
         return self->getRecord(path);
     }
@@ -120,31 +130,31 @@ public type Client client object {
 
     # Accesses Account SObject records based on the Account object ID.
     # + accountId - Account ID
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getAccountById(string accountId) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getAccountById(string accountId) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, ACCOUNT, accountId]);
         return self->getRecord(path);
     }
 
     # Creates new Account object record.
     # + accountRecord - Account JSON record to be inserted
-    # + return - If successful return account ID, else SalesforceConnectorError occured
-    public remote function createAccount(json accountRecord) returns @tainted string|SalesforceConnectorError {
+    # + return - If successful return account ID, else SalesforceError occured
+    public remote function createAccount(json accountRecord) returns @tainted string|SalesforceError {
         return self->createRecord(ACCOUNT, accountRecord);
     }
 
     # Deletes existing Account's records.
     # + accountId - Account ID
-    # + return - true if successful false otherwise, or SalesforceConnectorError occured
-    public remote function deleteAccount(string accountId) returns @tainted boolean|SalesforceConnectorError {
+    # + return - true if successful false otherwise, or SalesforceError occured
+    public remote function deleteAccount(string accountId) returns @tainted boolean|SalesforceError {
         return self->deleteRecord(ACCOUNT, accountId);
     }
 
     # Updates existing Account object record.
     # + accountId - Account ID
-    # + return - true if successful, false otherwise or SalesforceConnectorError occured
+    # + return - true if successful, false otherwise or SalesforceError occured
     public remote function updateAccount(string accountId, json accountRecord)
-    returns @tainted boolean|SalesforceConnectorError {
+    returns @tainted boolean|SalesforceError {
         return self->updateRecord(ACCOUNT, accountId, accountRecord);
     }
 
@@ -152,31 +162,31 @@ public type Client client object {
 
     # Accesses Lead SObject records based on the Lead object ID.
     # + leadId - Lead ID
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getLeadById(string leadId) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getLeadById(string leadId) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, LEAD, leadId]);
         return self->getRecord(path);
     }
     # Creates new Lead object record.
     # + leadRecord - Lead JSON record to be inserted
-    # + return - string lead ID result if successful else SalesforceConnectorError occured
-    public remote function createLead(json leadRecord) returns @tainted string|SalesforceConnectorError {
+    # + return - string lead ID result if successful else SalesforceError occured
+    public remote function createLead(json leadRecord) returns @tainted string|SalesforceError {
         return self->createRecord(LEAD, leadRecord);
     }
 
     # Deletes existing Lead's records.
     # + leadId - Lead ID
-    # + return - true  if successful, flase otherwise or SalesforceConnectorError occured
-    public remote function deleteLead(string leadId) returns @tainted boolean|SalesforceConnectorError {
+    # + return - true  if successful, flase otherwise or SalesforceError occured
+    public remote function deleteLead(string leadId) returns @tainted boolean|SalesforceError {
         return self->deleteRecord(LEAD, leadId);
     }
 
     # Updates existing Lead object record.
     # + leadId - Lead ID
     # + leadRecord - Lead JSON record
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function updateLead(string leadId, json leadRecord)
-    returns @tainted boolean|SalesforceConnectorError {
+    returns @tainted boolean|SalesforceError {
         return self->updateRecord(LEAD, leadId, leadRecord);
     }
 
@@ -184,32 +194,32 @@ public type Client client object {
 
     # Accesses Contacts SObject records based on the Contact object ID.
     # + contactId - Contact ID
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getContactById(string contactId) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getContactById(string contactId) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, CONTACT, contactId]);
         return self->getRecord(path);
     }
 
     # Creates new Contact object record.
     # + contactRecord - JSON contact record
-    # + return - string ID if successful else SalesforceConnectorError occured
-    public remote function createContact(json contactRecord) returns @tainted string|SalesforceConnectorError {
+    # + return - string ID if successful else SalesforceError occured
+    public remote function createContact(json contactRecord) returns @tainted string|SalesforceError {
         return self->createRecord(CONTACT, contactRecord);
     }
 
     # Deletes existing Contact's records.
     # + contactId - Contact ID
-    # + return - true if successful else false, or SalesforceConnectorError occured
-    public remote function deleteContact(string contactId) returns @tainted boolean|SalesforceConnectorError {
+    # + return - true if successful else false, or SalesforceError occured
+    public remote function deleteContact(string contactId) returns @tainted boolean|SalesforceError {
         return self->deleteRecord(CONTACT, contactId);
     }
 
     # Updates existing Contact object record.
     # + contactId - Contact ID
     # + contactRecord - JSON contact record
-    # + return - true if successful else false or SalesforceConnectorError occured
+    # + return - true if successful else false or SalesforceError occured
     public remote function updateContact(string contactId, json contactRecord)
-    returns @tainted boolean|SalesforceConnectorError {
+    returns @tainted boolean|SalesforceError {
         return self->updateRecord(CONTACT, contactId, contactRecord);
     }
 
@@ -217,31 +227,31 @@ public type Client client object {
 
     # Accesses Opportunities SObject records based on the Opportunity object ID.
     # + opportunityId - Opportunity ID
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getOpportunityById(string opportunityId) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getOpportunityById(string opportunityId) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, OPPORTUNITY, opportunityId]);
         return self->getRecord(path);
     }
 
     # Creates new Opportunity object record.
     # + opportunityRecord - JSON opportunity record
-    # + return - Opportunity ID if successful else SalesforceConnectorError occured
-    public remote function createOpportunity(json opportunityRecord) returns @tainted string|SalesforceConnectorError {
+    # + return - Opportunity ID if successful else SalesforceError occured
+    public remote function createOpportunity(json opportunityRecord) returns @tainted string|SalesforceError {
         return self->createRecord(OPPORTUNITY, opportunityRecord);
     }
 
     # Deletes existing Opportunity's records.
     # + opportunityId - Opportunity ID
-    # + return - true if successful else false or SalesforceConnectorError occured
-    public remote function deleteOpportunity(string opportunityId) returns @tainted boolean|SalesforceConnectorError {
+    # + return - true if successful else false or SalesforceError occured
+    public remote function deleteOpportunity(string opportunityId) returns @tainted boolean|SalesforceError {
         return self->deleteRecord(OPPORTUNITY, opportunityId);
     }
 
     # Updates existing Opportunity object record.
     # + opportunityId - Opportunity ID
-    # + return - true if successful else false or SalesforceConnectorError occured
+    # + return - true if successful else false or SalesforceError occured
     public remote function updateOpportunity(string opportunityId, json opportunityRecord)
-    returns @tainted boolean|SalesforceConnectorError {
+    returns @tainted boolean|SalesforceError {
         return self->updateRecord(OPPORTUNITY, opportunityId, opportunityRecord);
     }
 
@@ -249,32 +259,32 @@ public type Client client object {
 
     # Accesses Products SObject records based on the Product object ID.
     # + productId - Product ID
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getProductById(string productId) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getProductById(string productId) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, PRODUCT, productId]);
         return self->getRecord(path);
     }
 
     # Creates new Product object record.
     # + productRecord - JSON product record
-    # + return - Product ID if successful else SalesforceConnectorError occured
-    public remote function createProduct(json productRecord) returns @tainted string|SalesforceConnectorError {
+    # + return - Product ID if successful else SalesforceError occured
+    public remote function createProduct(json productRecord) returns @tainted string|SalesforceError {
         return self->createRecord(PRODUCT, productRecord);
     }
 
     # Deletes existing product's records.
     # + productId - Product ID
-    # + return - true if successful else false or SalesforceConnectorError occured
-    public remote function deleteProduct(string productId) returns @tainted boolean|SalesforceConnectorError {
+    # + return - true if successful else false or SalesforceError occured
+    public remote function deleteProduct(string productId) returns @tainted boolean|SalesforceError {
         return self->deleteRecord(PRODUCT, productId);
     }
 
     # Updates existing Product object record.
     # + productId - Product ID
     # + productRecord - JSON product record
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function updateProduct(string productId, json productRecord)
-    returns @tainted boolean|SalesforceConnectorError {
+    returns @tainted boolean|SalesforceError {
         return self->updateRecord(PRODUCT, productId, productRecord);
     }
 
@@ -284,9 +294,9 @@ public type Client client object {
     # + sObjectName - SObject name value
     # + id - SObject id
     # + fields - Relevant fields
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function getFieldValuesFromSObjectRecord(string sObjectName, string id, string fields)
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         string prefixPath = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, id]);
         return self->getRecord(prefixPath + QUESTION_MARK + FIELDS + EQUAL_SIGN + fields);
     }
@@ -295,9 +305,9 @@ public type Client client object {
     # + externalObjectName - External SObject name value
     # + id - External SObject id
     # + fields - Relevant fields
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function getFieldValuesFromExternalObjectRecord(string externalObjectName, string id, string fields)
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         string prefixPath = prepareUrl([API_BASE_PATH, SOBJECTS, externalObjectName, id]);
         return self->getRecord(prefixPath + QUESTION_MARK + FIELDS + EQUAL_SIGN + fields);
     }
@@ -305,9 +315,9 @@ public type Client client object {
     # Allows to create multiple records.
     # + sObjectName - SObject name value
     # + records - JSON records
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function createMultipleRecords(string sObjectName, json records) 
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         http:Request req = new;
         string path = string `${API_BASE_PATH}/${MULTIPLE_RECORDS}/${sObjectName}`;
         req.setJsonPayload(records);
@@ -320,9 +330,9 @@ public type Client client object {
     # + sObjectName - SObject name value
     # + fieldName - Relevant field name
     # + fieldValue - Relevant field value
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function getRecordByExternalId(string sObjectName, string fieldName, string fieldValue)
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, fieldName, fieldValue]);
         return self->getRecord(path);
     }
@@ -333,9 +343,9 @@ public type Client client object {
     # + fieldId - Field id
     # + fieldValue - Relevant field value
     # + recordPayload - JSON record
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function upsertSObjectByExternalId(string sObjectName, string fieldId, string fieldValue,
-    json recordPayload) returns @tainted json|SalesforceConnectorError {
+    json recordPayload) returns @tainted json|SalesforceError {
 
         http:Request req = new;
         string path = string `${API_BASE_PATH}/${SOBJECTS}/${sObjectName}/${fieldId}/${fieldValue}`;
@@ -349,9 +359,9 @@ public type Client client object {
     # + sObjectName - SObject name value
     # + startTime - Start time relevant to records
     # + endTime - End time relevant to records
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function getDeletedRecords(string sObjectName, string startTime, string endTime)
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         string path = prepareQueryUrl([API_BASE_PATH, SOBJECTS, sObjectName, DELETED], [START, END], [startTime, endTime]);
         return self->getRecord(path);
     }
@@ -361,9 +371,9 @@ public type Client client object {
     # + sObjectName - SObject name value
     # + startTime - Start time relevant to records
     # + endTime - End time relevant to records
-    # + return - `json` result if successful else SalesforceConnectorError occured
+    # + return - `json` result if successful else SalesforceError occured
     public remote function getUpdatedRecords(string sObjectName, string startTime, string endTime)
-    returns @tainted json|SalesforceConnectorError {
+    returns @tainted json|SalesforceError {
         string path = prepareQueryUrl([API_BASE_PATH, SOBJECTS, sObjectName, UPDATED], [START, END], [startTime, endTime]);
         return self->getRecord(path);
     }
@@ -371,15 +381,15 @@ public type Client client object {
     //Describe SObjects
 
     # Lists the available objects and their metadata for your organization and available to the logged-in user.
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function describeAvailableObjects() returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function describeAvailableObjects() returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS]);
         return self->getRecord(path);
     }
 
     # Describes the individual metadata for the specified object.
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getSObjectBasicInfo(string sobjectName) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getSObjectBasicInfo(string sobjectName) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sobjectName]);
         return self->getRecord(path);
     }
@@ -387,15 +397,15 @@ public type Client client object {
     # Completely describes the individual metadata at all levels for the specified object. Can be used to retrieve
     # the fields, URLs, and child relationships.
     # + sObjectName - SObject name value
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function describeSObject(string sObjectName) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function describeSObject(string sObjectName) returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, DESCRIBE]);
         return self->getRecord(path);
     }
 
     # Query for actions displayed in the UI, given a user, a context, device format, and a record ID.
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function sObjectPlatformAction() returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function sObjectPlatformAction() returns @tainted json|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, PLATFORM_ACTION]);
         return self->getRecord(path);
     }
@@ -404,8 +414,8 @@ public type Client client object {
 
     # Accesses records based on the specified object ID, can be used with external objects.
     # + path - Resource path
-    # + return - `json` result if successful else SalesforceConnectorError occured
-    public remote function getRecord(string path) returns @tainted json|SalesforceConnectorError {
+    # + return - `json` result if successful else SalesforceError occured
+    public remote function getRecord(string path) returns @tainted json|SalesforceError {
         http:Response|error response = self.salesforceClient->get(path);
         return checkAndSetErrors(response, true);
     }
@@ -413,16 +423,16 @@ public type Client client object {
     # Create records based on relevant object type sent with json record.
     # + sObjectName - SObject name value
     # + recordPayload - JSON record to be inserted
-    # + return - created entity ID if successful else SalesforceConnectorError occured
+    # + return - created entity ID if successful else SalesforceError occured
     public remote function createRecord(string sObjectName, json recordPayload) returns 
-    @tainted string|SalesforceConnectorError {
+    @tainted string|SalesforceError {
         http:Request req = new;
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName]);
         req.setJsonPayload(recordPayload);
 
         var response = self.salesforceClient->post(path, req);
 
-        json|SalesforceConnectorError result = checkAndSetErrors(response, true);
+        json|SalesforceError result = checkAndSetErrors(response, true);
         if (result is json) {
             return result.id.toString();
         } else {
@@ -434,16 +444,16 @@ public type Client client object {
     # + sObjectName - SObject name value
     # + id - SObject id
     # + recordPayload - JSON record to be updated
-    # + return - true if successful else false or SalesforceConnectorError occured
+    # + return - true if successful else false or SalesforceError occured
     public remote function updateRecord(string sObjectName, string id, json recordPayload)
-    returns @tainted boolean|SalesforceConnectorError {
+    returns @tainted boolean|SalesforceError {
         http:Request req = new;
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, id]);
         req.setJsonPayload(recordPayload);
 
         var response = self.salesforceClient->patch(path, req);
 
-        json|SalesforceConnectorError result = checkAndSetErrors(response, false);
+        json|SalesforceError result = checkAndSetErrors(response, false);
 
         if (result is json) {
             return true;
@@ -455,13 +465,13 @@ public type Client client object {
     # Delete existing records based on relevant object id.
     # + sObjectName - SObject name value
     # + id - SObject id
-    # + return - true if successful else false or SalesforceConnectorError occured
+    # + return - true if successful else false or SalesforceError occured
     public remote function deleteRecord(string sObjectName, string id) returns 
-    @tainted boolean|SalesforceConnectorError {
+    @tainted boolean|SalesforceError {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, id]);
         var response = self.salesforceClient->delete(path, ());
 
-        json|SalesforceConnectorError result = checkAndSetErrors(response, false);
+        json|SalesforceError result = checkAndSetErrors(response, false);
 
         if (result is json) {
             return true;

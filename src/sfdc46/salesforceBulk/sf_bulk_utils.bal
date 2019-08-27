@@ -34,7 +34,8 @@ function checkAndSetErrorsXml(http:Response | error httpResponse) returns @taint
             if (xmlResponse is xml) {
                 return xmlResponse;
             } else {
-                return logAndGetSalesforceError(xmlResponse, "HTTP response to XML conversion error.");
+                return logAndGetSalesforceError(xmlResponse, "HTTP response to XML conversion error.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         // If failure.
         } else {
@@ -47,11 +48,12 @@ function checkAndSetErrorsXml(http:Response | error httpResponse) returns @taint
                 return sfError;
             } else {
                 return logAndGetSalesforceError(xmlResponse,
-                "Could not retirieve the error, HTTP response to XML conversion error.");
+                    "Could not retirieve the error, HTTP response to XML conversion error.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         }
     } else {
-        return logAndGetSalesforceError(httpResponse, "HTTP error.");
+        return logAndGetSalesforceError(httpResponse, "HTTP error.", http:STATUS_INTERNAL_SERVER_ERROR);
     }
 }
 
@@ -66,7 +68,8 @@ function checkAndSetErrorsCsv(http:Response | error httpResponse) returns @taint
             if (textResponse is string) {
                 return textResponse;
             } else {
-                return logAndGetSalesforceError(textResponse, "HTTP response to XML conversion error.");
+                return logAndGetSalesforceError(textResponse, "HTTP response to XML conversion error.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         // If failure.
         } else {
@@ -79,11 +82,12 @@ function checkAndSetErrorsCsv(http:Response | error httpResponse) returns @taint
                 return sfError;
             } else {
                 return logAndGetSalesforceError(xmlResponse,
-                "Could not retrieve the error, HTTP response to XML conversion error.");
+                    "Could not retrieve the error, HTTP response to XML conversion error.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         }
     } else {
-        return logAndGetSalesforceError(httpResponse, "HTTP error.");
+        return logAndGetSalesforceError(httpResponse, "HTTP error.", http:STATUS_INTERNAL_SERVER_ERROR);
     }
 }
 
@@ -98,7 +102,8 @@ function checkAndSetErrorsJson(http:Response | error httpResponse) returns @tain
             if (response is json) {
                 return response;
             } else {
-                return logAndGetSalesforceError(response, "HTTP response to XML conversion error.");
+                return logAndGetSalesforceError(response, "HTTP response to XML conversion error.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         // If failure.
         } else {
@@ -111,11 +116,12 @@ function checkAndSetErrorsJson(http:Response | error httpResponse) returns @tain
                 return sfError;
             } else {
                 return logAndGetSalesforceError(response,
-                "Could not retirieve the error, HTTP response to XML conversion error.");
+                    "Could not retirieve the error, HTTP response to XML conversion error.", 
+                    http:STATUS_INTERNAL_SERVER_ERROR);
             }
         }
     } else {
-        return logAndGetSalesforceError(httpResponse, "HTTP error.");
+        return logAndGetSalesforceError(httpResponse, "HTTP error.", http:STATUS_INTERNAL_SERVER_ERROR);
     }
 }
 
@@ -123,19 +129,25 @@ function checkAndSetErrorsJson(http:Response | error httpResponse) returns @tain
 # + responseErr - error occurred
 # + baseErrorMsg - base error message
 # + return - SalesforceError
-function logAndGetSalesforceError(error responseErr, string baseErrorMsg) returns SalesforceError {
+function logAndGetSalesforceError(error responseErr, string baseErrorMsg, int errCode) returns SalesforceError {
     log:printError(baseErrorMsg + " Error: " + responseErr.detail()["message"].toString());
-    return getSalesforceError(baseErrorMsg, "500");
+    return getSalesforceError(baseErrorMsg, errCode.toString());
 }
 
 # Get salesforce error.
 # + errMsg - error message
 # + errCode - error code
 # + return - SalesforceError
-function getSalesforceError(string errMsg, string errCode) returns SalesforceError {
+function getSalesforceError(string errMsg, string|int errCode) returns SalesforceError {
+    string code = "";
+    if (errCode is int) {
+        code = errCode.toString();
+    } else {
+        code = errCode;
+    }
     SalesforceError sfError = {
         message: errMsg,
-        errorCode: errCode
+        errorCode: code
     };
     return sfError;
 }

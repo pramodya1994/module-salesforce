@@ -305,7 +305,7 @@ function getContactIdByName(string firstName, string lastName, string title) ret
     string contactId = "";
     string sampleQuery = "SELECT Id FROM Contact WHERE FirstName='" + firstName + "' AND LastName='" + lastName 
         + "' AND Title='" + title + "'";
-    json|SalesforceConnectorError jsonRes = salesforceClient->getQueryResult(sampleQuery);
+    json|SalesforceError jsonRes = salesforceClient->getQueryResult(sampleQuery);
 
     if (jsonRes is json) {
         json|error records = jsonRes.records;
